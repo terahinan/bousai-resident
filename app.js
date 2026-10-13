@@ -30,7 +30,6 @@
       taskList.appendChild(card);
     });
   }
-  function sourceLinks(sources){if(!sources?.length)return '';return `<div class="detail-sources"><strong>参考</strong>${sources.map(s=>`<a href="${s.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.label)}</a>`).join('')}</div>`;}
   function makeChevron(){return '<span class="nested-chevron" aria-hidden="true">⌄</span>';}
   function toggleButton(button,body,wrap){const open=button.getAttribute('aria-expanded')==='true';button.setAttribute('aria-expanded',String(!open));body.hidden=open;wrap?.classList.toggle('is-open',!open);}
   function renderPreparedness(){
@@ -46,7 +45,7 @@
         const row=document.createElement('div');row.className='prep-row';
         row.innerHTML=`<label class="prep-check-label"><input type="checkbox" ${prepChecks[item.id]?'checked':''} aria-label="${escapeHtml(item.title)}を実施済みにする"><span class="prep-check-box" aria-hidden="true"></span></label><button type="button" class="item-toggle" aria-expanded="false"><span>${escapeHtml(item.title)}</span>${makeChevron()}</button>`;
         const detail=document.createElement('div');detail.className='item-detail';detail.hidden=true;
-        detail.innerHTML=`<p class="detail-summary">${escapeHtml(item.summary)}</p><h4>確認のポイント</h4><ul>${item.points.map(p=>`<li>${escapeHtml(p)}</li>`).join('')}</ul>${sourceLinks(item.sources)}`;
+        detail.innerHTML=`<p class="detail-summary">${escapeHtml(item.summary)}</p><h4>確認のポイント</h4><ul>${item.points.map(p=>`<li>${escapeHtml(p)}</li>`).join('')}</ul>`;
         const cb=row.querySelector('input'), it=row.querySelector('.item-toggle');
         cb.addEventListener('change',()=>{prepChecks[item.id]=cb.checked;saveObject(STORAGE.prep,prepChecks);wrap.classList.toggle('is-checked',cb.checked);updatePreparednessProgress();const d=items.filter(x=>prepChecks[x.id]).length;button.querySelector('small').textContent=`${d} / ${items.length} 実施`;});
         it.addEventListener('click',()=>toggleButton(it,detail,wrap));wrap.append(row,detail);body.appendChild(wrap);
@@ -56,127 +55,88 @@
   }
   function updatePreparednessProgress(){const total=APP_DATA.preparedness.length,done=APP_DATA.preparedness.filter(x=>prepChecks[x.id]).length;preparednessCount.textContent=`${done} / ${total}`;preparednessProgress.max=total;preparednessProgress.value=done;}
 
+  // 豆知識の図は横長SVGではなく、スマートフォンで縦に読めるHTML図解とする。
+  // 色だけで区別せず、文章ラベルを併記する。
+  function fig(title, content, note=''){
+    return `<figure class="learning-figure"><figcaption class="figure-heading">${escapeHtml(title)}</figcaption>${content}${note?`<p class="figure-note">${escapeHtml(note)}</p>`:''}</figure>`;
+  }
+  function stepList(rows){
+    return `<ol class="figure-steps">${rows.map(([title,body,emoji])=>`<li><span class="figure-step-mark" aria-hidden="true">${emoji||'●'}</span><div><strong>${escapeHtml(title)}</strong>${body?`<p>${escapeHtml(body)}</p>`:''}</div></li>`).join('')}</ol>`;
+  }
+  function factCards(rows){
+    return `<div class="figure-facts">${rows.map(([label,body,mark])=>`<div class="figure-fact"><span class="fact-mark" aria-hidden="true">${mark||'●'}</span><div><strong>${escapeHtml(label)}</strong><p>${escapeHtml(body)}</p></div></div>`).join('')}</div>`;
+  }
+  function comparePanels(rows){
+    return `<div class="figure-compare">${rows.map(([kind,label,body])=>`<section class="figure-compare-panel ${escapeHtml(kind)}"><strong>${escapeHtml(label)}</strong><p>${escapeHtml(body)}</p></section>`).join('')}</div>`;
+  }
   function visual(type){
     const V={
-      history:`<div class="viz"><div class="viz-title">過去の大地震 ― 被害の特徴と備え</div>
-        <svg class="info-svg" viewBox="0 0 720 300" role="img" aria-label="1995年阪神淡路大震災、2011年東日本大震災、2016年熊本地震、2024年能登半島地震の主な特徴を時系列で示す図">
-          <line x1="80" y1="70" x2="650" y2="70" stroke="#9fbdb7" stroke-width="6" stroke-linecap="round"/>
-          <g font-family="sans-serif" text-anchor="middle">
-            <g transform="translate(100 70)"><circle r="18" fill="#0f766e"/><text y="-34" font-size="22" font-weight="700" fill="#12213a">1995</text><rect x="-72" y="32" width="144" height="118" rx="12" fill="#edf8f5" stroke="#b8d5cf"/><text y="62" font-size="17" font-weight="700">阪神・淡路</text><text y="91" font-size="15">建物倒壊</text><text y="115" font-size="15">市街地火災</text><text y="139" font-size="13" fill="#0f766e">家具・耐震・消火</text></g>
-            <g transform="translate(270 70)"><circle r="18" fill="#0f766e"/><text y="-34" font-size="22" font-weight="700" fill="#12213a">2011</text><rect x="-72" y="32" width="144" height="118" rx="12" fill="#edf8f5" stroke="#b8d5cf"/><text y="62" font-size="17" font-weight="700">東日本</text><text y="91" font-size="15">巨大津波</text><text y="115" font-size="15">広域停電</text><text y="139" font-size="13" fill="#0f766e">避難・備蓄</text></g>
-            <g transform="translate(440 70)"><circle r="18" fill="#0f766e"/><text y="-34" font-size="22" font-weight="700" fill="#12213a">2016</text><rect x="-72" y="32" width="144" height="118" rx="12" fill="#edf8f5" stroke="#b8d5cf"/><text y="62" font-size="17" font-weight="700">熊本</text><text y="91" font-size="15">強い揺れが反復</text><text y="115" font-size="15">家屋被害</text><text y="139" font-size="13" fill="#0f766e">余震への備え</text></g>
-            <g transform="translate(610 70)"><circle r="18" fill="#0f766e"/><text y="-34" font-size="22" font-weight="700" fill="#12213a">2024</text><rect x="-72" y="32" width="144" height="118" rx="12" fill="#edf8f5" stroke="#b8d5cf"/><text y="62" font-size="17" font-weight="700">能登半島</text><text y="91" font-size="15">倒壊・火災</text><text y="115" font-size="15">道路寸断</text><text y="139" font-size="13" fill="#0f766e">複合災害を想定</text></g>
-          </g>
-        </svg><p class="figure-note">地震ごとに被害の出方は違います。ひとつの対策だけでなく、「家の安全・火災・避難・備蓄」を組み合わせて備えます。</p></div>`,
-      magnitude:`<div class="viz"><div class="viz-title">マグニチュードと震度は別もの</div>
-        <svg class="info-svg" viewBox="0 0 720 330" role="img" aria-label="地震の規模を表すマグニチュードと場所ごとの揺れを表す震度の違いを示す図">
-          <g font-family="sans-serif">
-            <circle cx="135" cy="160" r="72" fill="#0f766e"/><text x="135" y="145" text-anchor="middle" font-size="18" fill="white">地震そのものの規模</text><text x="135" y="185" text-anchor="middle" font-size="46" font-weight="700" fill="white">M</text><text x="135" y="210" text-anchor="middle" font-size="15" fill="white">マグニチュード</text>
-            <path d="M220 160 C255 105 285 105 320 160 C355 215 385 215 420 160" fill="none" stroke="#e47721" stroke-width="8" stroke-linecap="round"/>
-            <g text-anchor="middle"><rect x="455" y="60" width="210" height="64" rx="12" fill="#fee9dc"/><text x="560" y="88" font-size="16">震源に近い場所</text><text x="560" y="113" font-size="22" font-weight="700" fill="#a33f12">震度が大きいことが多い</text>
-            <rect x="455" y="137" width="210" height="64" rx="12" fill="#f3f7f6"/><text x="560" y="165" font-size="16">少し離れた場所</text><text x="560" y="190" font-size="20" font-weight="700">震度は変わる</text>
-            <rect x="455" y="214" width="210" height="64" rx="12" fill="#edf8f5"/><text x="560" y="242" font-size="16">遠い場所</text><text x="560" y="267" font-size="20" font-weight="700" fill="#0f766e">小さくなることが多い</text></g>
-            <text x="360" y="310" text-anchor="middle" font-size="14" fill="#667085">地盤・地形などによっても揺れ方は変わります</text>
-          </g>
-        </svg><div class="key-box"><b>覚え方</b><span>マグニチュード＝電球そのものの明るさ ／ 震度＝その場所で感じる明るさ、というイメージです。</span></div></div>`,
-      probability:`<div class="viz"><div class="viz-title">「30年以内○％」は発生日の予報ではない</div>
-        <svg class="info-svg" viewBox="0 0 720 300" role="img" aria-label="地震発生確率は30年間のどこで起こるかを示すものではなく日付の予報ではないことを説明する図">
-          <g font-family="sans-serif"><text x="45" y="44" font-size="16" font-weight="700">今日</text><text x="642" y="44" font-size="16" font-weight="700">30年後</text>
-          <line x1="72" y1="80" x2="650" y2="80" stroke="#0f766e" stroke-width="12" stroke-linecap="round"/><g fill="#e47721"><circle cx="150" cy="80" r="8"/><circle cx="270" cy="80" r="8"/><circle cx="410" cy="80" r="8"/><circle cx="560" cy="80" r="8"/></g>
-          <text x="360" y="118" text-anchor="middle" font-size="16">どの日に起こるかは分からない</text>
-          <rect x="65" y="150" width="260" height="90" rx="14" fill="#edf8f5" stroke="#b8d5cf"/><text x="195" y="178" text-anchor="middle" font-size="15">計算方法の一例</text><text x="195" y="214" text-anchor="middle" font-size="28" font-weight="700" fill="#0f766e">60～90％程度以上</text>
-          <rect x="395" y="150" width="260" height="90" rx="14" fill="#f3f7f6" stroke="#d0d5dd"/><text x="525" y="178" text-anchor="middle" font-size="15">別の計算方法</text><text x="525" y="214" text-anchor="middle" font-size="28" font-weight="700" fill="#475467">20～50％</text>
-          <text x="360" y="277" text-anchor="middle" font-size="14" fill="#667085">確率が低い時期＝「今は安全」という意味ではありません</text></g>
-        </svg><p class="figure-note">地震本部は、南海トラフ地震の発生確率を最も高いランクと評価しています。日付を予測する数字ではないため、確率にかかわらず備えを続けます。</p></div>`,
-      longperiod:`<div class="viz"><div class="viz-title">長周期地震動 ― 高層階ほど大きく長く揺れることがある</div>
-        <svg class="info-svg" viewBox="0 0 720 330" role="img" aria-label="低層建物と高層建物の長周期地震動による揺れ方の違いを示す図">
-          <g font-family="sans-serif"><line x1="45" y1="270" x2="675" y2="270" stroke="#7b8f8a" stroke-width="5"/>
-          <rect x="95" y="190" width="95" height="80" rx="4" fill="#dfeae7" stroke="#0f766e" stroke-width="3"/><text x="142" y="300" text-anchor="middle" font-size="16">低層建物</text><path d="M75 160 Q95 140 115 160" fill="none" stroke="#e47721" stroke-width="5"/><path d="M170 160 Q190 140 210 160" fill="none" stroke="#e47721" stroke-width="5"/>
-          <rect x="365" y="55" width="125" height="215" rx="4" fill="#edf8f5" stroke="#0f766e" stroke-width="4"/><g stroke="#9fc9c1" stroke-width="2"><line x1="365" y1="100" x2="490" y2="100"/><line x1="365" y1="145" x2="490" y2="145"/><line x1="365" y1="190" x2="490" y2="190"/><line x1="365" y1="235" x2="490" y2="235"/></g><text x="428" y="300" text-anchor="middle" font-size="16">高層建物</text>
-          <path d="M315 95 C350 55 380 55 415 95" fill="none" stroke="#e47721" stroke-width="7"/><path d="M440 95 C475 55 505 55 540 95" fill="none" stroke="#e47721" stroke-width="7"/><text x="425" y="34" text-anchor="middle" font-size="16" fill="#a33f12">ゆっくり・大きく・長く</text>
-          <g text-anchor="middle"><rect x="535" y="74" width="135" height="42" rx="8" fill="#eef7f5"/><text x="602" y="101" font-size="15">階級1</text><rect x="535" y="124" width="135" height="42" rx="8" fill="#fff7e8"/><text x="602" y="151" font-size="15">階級2</text><rect x="535" y="174" width="135" height="42" rx="8" fill="#fee9dc"/><text x="602" y="201" font-size="15">階級3</text><rect x="535" y="224" width="135" height="42" rx="8" fill="#fbd5d2"/><text x="602" y="251" font-size="15">階級4</text></g></g>
-        </svg><p class="figure-note">高層ビルでは、家具やキャスター付き什器が大きく移動することがあります。揺れている間は無理に移動せず、頭を守ります。</p></div>`,
-      hazard:`<div class="viz"><div class="viz-title">下京区の地震想定を見るときのポイント</div>
-        <svg class="info-svg" viewBox="0 0 720 315" role="img" aria-label="自宅から集合場所、避難先までの経路と危険箇所をハザードマップで確認する図">
-          <g font-family="sans-serif"><rect x="35" y="35" width="650" height="230" rx="14" fill="#f7fbfa" stroke="#b8d5cf"/><path d="M100 210 C190 145 250 205 330 135 S470 80 610 125" fill="none" stroke="#758d88" stroke-width="16" stroke-linecap="round"/><path d="M100 210 C190 145 250 205 330 135 S470 80 610 125" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-dasharray="12 10"/>
-          <g text-anchor="middle"><rect x="63" y="169" width="86" height="64" rx="10" fill="#edf8f5" stroke="#0f766e"/><text x="106" y="195" font-size="25">⌂</text><text x="106" y="219" font-size="15" font-weight="700">自宅</text>
-          <circle cx="275" cy="174" r="32" fill="#fff1e8" stroke="#e47721" stroke-width="3"/><text x="275" y="180" font-size="28">!</text><text x="275" y="224" font-size="14">危険箇所</text>
-          <rect x="372" y="91" width="112" height="66" rx="10" fill="#eef7f5" stroke="#0f766e"/><text x="428" y="119" font-size="16" font-weight="700">集合場所</text><text x="428" y="142" font-size="13">町内で確認</text>
-          <rect x="565" y="88" width="90" height="72" rx="10" fill="#edf8f5" stroke="#0f766e"/><text x="610" y="117" font-size="18">避難先</text><text x="610" y="142" font-size="13">開設を確認</text></g>
-          <text x="360" y="296" text-anchor="middle" font-size="14" fill="#667085">想定震度だけでなく、「実際に通る道」と危険箇所を一緒に確認</text></g>
-        </svg></div>`,
-      shelter:`<div class="viz"><div class="viz-title">「逃げる場所」と「生活する場所」を区別する</div>
-        <svg class="info-svg" viewBox="0 0 720 320" role="img" aria-label="指定緊急避難場所と指定避難所の違いを示す図">
-          <g font-family="sans-serif" text-anchor="middle"><rect x="245" y="24" width="230" height="58" rx="12" fill="#fff1e8" stroke="#e47721"/><text x="360" y="50" font-size="17" font-weight="700">災害の危険が迫っている</text><text x="360" y="71" font-size="14">まず命を守る</text>
-          <path d="M360 84 L360 120" stroke="#667085" stroke-width="5"/><polygon points="360,130 349,112 371,112" fill="#667085"/>
-          <rect x="70" y="135" width="250" height="110" rx="14" fill="#edf8f5" stroke="#0f766e" stroke-width="3"/><text x="195" y="170" font-size="18" font-weight="700">指定緊急避難場所</text><text x="195" y="200" font-size="16">危険から一時的に逃げる</text><text x="195" y="224" font-size="13" fill="#667085">災害の種類ごとに指定</text>
-          <rect x="400" y="135" width="250" height="110" rx="14" fill="#f3f7f6" stroke="#75948f" stroke-width="3"/><text x="525" y="170" font-size="18" font-weight="700">指定避難所</text><text x="525" y="200" font-size="16">自宅で生活できない人が生活</text><text x="525" y="224" font-size="13" fill="#667085">実際の開設状況を確認</text>
-          <text x="360" y="288" font-size="14" fill="#667085">同じ施設が両方に指定されることもあります</text></g>
-        </svg><p class="figure-note">植柳コミュニティセンターは京都市防災ポータルで市指定避難所として掲載されています。災害時は必ず開設状況を確認してください。</p></div>`,
-      rescue:`<div class="viz"><div class="viz-title">救命の基本 ― 自分の安全を確保してから</div>
-        <svg class="info-svg" viewBox="0 0 720 390" role="img" aria-label="救命処置の流れを安全確認からAEDまで順番に示す図">
-          <g font-family="sans-serif" text-anchor="middle"><rect x="150" y="20" width="420" height="54" rx="12" fill="#fff1e8" stroke="#e47721"/><text x="360" y="54" font-size="19" font-weight="700">① 自分と周囲の安全を確認</text>
-          <path d="M360 76 V106" stroke="#667085" stroke-width="4"/><polygon points="360,117 350,100 370,100" fill="#667085"/>
-          <rect x="150" y="120" width="420" height="54" rx="12" fill="#edf8f5" stroke="#0f766e"/><text x="360" y="153" font-size="18" font-weight="700">② 反応と普段どおりの呼吸を確認</text>
-          <path d="M360 176 V206" stroke="#667085" stroke-width="4"/><polygon points="360,217 350,200 370,200" fill="#667085"/>
-          <rect x="80" y="220" width="260" height="62" rx="12" fill="#edf8f5" stroke="#0f766e"/><text x="210" y="247" font-size="18" font-weight="700">③ 119番通報</text><text x="210" y="270" font-size="14">場所・状態を伝える</text>
-          <rect x="380" y="220" width="260" height="62" rx="12" fill="#edf8f5" stroke="#0f766e"/><text x="510" y="247" font-size="18" font-weight="700">③ AEDを依頼</text><text x="510" y="270" font-size="14">近くの人に持ってきてもらう</text>
-          <path d="M360 286 V316" stroke="#667085" stroke-width="4"/><polygon points="360,327 350,310 370,310" fill="#667085"/>
-          <rect x="150" y="330" width="420" height="54" rx="12" fill="#eaf4f1" stroke="#0f766e" stroke-width="3"/><text x="360" y="363" font-size="18" font-weight="700">④ 胸骨圧迫を続ける → AEDの音声に従う</text></g>
-        </svg><div class="key-box warning"><b>重要</b><span>倒壊建物の中など危険な場所へ無理に入らないでください。二次災害を防ぐことが最優先です。</span></div></div>`,
-      aed:`<div class="viz"><div class="viz-title">AED ― 音声案内に従えば使える</div>
-        <svg class="info-svg" viewBox="0 0 720 360" role="img" aria-label="AEDの電源、パッド貼付、解析、ショック、胸骨圧迫再開の手順を示す図">
-          <g font-family="sans-serif"><g text-anchor="middle"><rect x="25" y="40" width="130" height="85" rx="12" fill="#edf8f5" stroke="#0f766e"/><text x="90" y="72" font-size="28" font-weight="700">1</text><text x="90" y="102" font-size="16">電源を入れる</text>
-          <rect x="190" y="40" width="150" height="85" rx="12" fill="#edf8f5" stroke="#0f766e"/><text x="265" y="72" font-size="28" font-weight="700">2</text><text x="265" y="102" font-size="16">パッドを貼る</text>
-          <rect x="380" y="40" width="140" height="85" rx="12" fill="#edf8f5" stroke="#0f766e"/><text x="450" y="72" font-size="28" font-weight="700">3</text><text x="450" y="102" font-size="16">解析を待つ</text>
-          <rect x="555" y="40" width="140" height="85" rx="12" fill="#fff1e8" stroke="#e47721"/><text x="625" y="72" font-size="28" font-weight="700">4</text><text x="625" y="100" font-size="15">指示があれば</text><text x="625" y="117" font-size="15">ショック</text></g>
-          <g transform="translate(230 160)"><path d="M90 0 C45 0 30 38 38 74 L52 158 L128 158 L142 74 C150 38 135 0 90 0Z" fill="#f8e8db" stroke="#9b6c5a" stroke-width="3"/><rect x="52" y="28" width="52" height="35" rx="6" fill="#fff" stroke="#0f766e" stroke-width="3" transform="rotate(-12 78 46)"/><rect x="90" y="92" width="52" height="35" rx="6" fill="#fff" stroke="#0f766e" stroke-width="3" transform="rotate(12 116 110)"/><text x="-5" y="48" font-size="14">右上</text><line x1="28" y1="45" x2="53" y2="45" stroke="#667085"/><text x="155" y="118" font-size="14">左下</text><line x1="142" y1="113" x2="152" y2="113" stroke="#667085"/></g>
-          <text x="500" y="205" font-size="16" font-weight="700">解析中・ショック時</text><text x="500" y="233" font-size="19" fill="#b42318" font-weight="700">傷病者に触れない</text><text x="500" y="273" font-size="16" font-weight="700">ショック後</text><text x="500" y="301" font-size="19" fill="#0f766e" font-weight="700">すぐ胸骨圧迫を再開</text></g>
-        </svg></div>`,
-      extinguisher:`<div class="viz"><div class="viz-title">消火器 ― 「ピン・ホース・レバー」の順</div>
-        <svg class="info-svg" viewBox="0 0 720 320" role="img" aria-label="消火器の安全栓を抜く、ホースを火元に向ける、レバーを握る手順を示す図">
-          <g font-family="sans-serif" text-anchor="middle"><g transform="translate(55 55)"><rect x="0" y="45" width="90" height="150" rx="24" fill="#d92d20"/><rect x="25" y="20" width="40" height="35" rx="4" fill="#7a271a"/><path d="M65 35 C120 45 135 85 145 120" fill="none" stroke="#333" stroke-width="8"/><circle cx="145" cy="122" r="10" fill="#333"/></g>
-          <rect x="235" y="40" width="130" height="95" rx="12" fill="#edf8f5" stroke="#0f766e"/><text x="300" y="73" font-size="30" font-weight="700">1</text><text x="300" y="108" font-size="16">安全栓を抜く</text>
-          <rect x="400" y="40" width="130" height="95" rx="12" fill="#edf8f5" stroke="#0f766e"/><text x="465" y="73" font-size="30" font-weight="700">2</text><text x="465" y="103" font-size="15">ホースを外し</text><text x="465" y="122" font-size="15">火元へ向ける</text>
-          <rect x="565" y="40" width="130" height="95" rx="12" fill="#edf8f5" stroke="#0f766e"/><text x="630" y="73" font-size="30" font-weight="700">3</text><text x="630" y="108" font-size="16">レバーを握る</text>
-          <path d="M270 165 C360 145 430 145 520 165" fill="none" stroke="#e47721" stroke-width="7" stroke-linecap="round"/><polygon points="525,165 507,154 509,176" fill="#e47721"/><path d="M550 190 C570 145 605 145 620 190 C635 230 585 260 550 220Z" fill="#f79009" opacity=".95"/><text x="585" y="286" font-size="15" fill="#a33f12">炎が天井付近まで達したら避難</text></g>
-        </svg></div>`,
-      breaker:`<div class="viz"><div class="viz-title">感震ブレーカー ― 揺れを感じて電気を自動遮断</div>
-        <svg class="info-svg" viewBox="0 0 720 330" role="img" aria-label="地震の揺れから感震ブレーカーが作動し電気火災を防ぐ流れと主な種類を示す図">
-          <g font-family="sans-serif" text-anchor="middle"><rect x="30" y="35" width="160" height="74" rx="12" fill="#fff1e8" stroke="#e47721"/><text x="110" y="65" font-size="25">揺れ</text><text x="110" y="92" font-size="15">一定以上の地震動</text><path d="M198 72 H255" stroke="#667085" stroke-width="5"/><polygon points="265,72 247,62 247,82" fill="#667085"/>
-          <rect x="275" y="35" width="170" height="74" rx="12" fill="#edf8f5" stroke="#0f766e"/><text x="360" y="65" font-size="20" font-weight="700">感震ブレーカー</text><text x="360" y="92" font-size="15">揺れを検知</text><path d="M453 72 H510" stroke="#667085" stroke-width="5"/><polygon points="520,72 502,62 502,82" fill="#667085"/>
-          <rect x="530" y="35" width="160" height="74" rx="12" fill="#eaf4f1" stroke="#0f766e"/><text x="610" y="65" font-size="21" font-weight="700">電気を遮断</text><text x="610" y="92" font-size="15">電気火災を抑える</text>
-          <text x="360" y="150" font-size="16" font-weight="700">主なタイプ</text><g font-size="14"><rect x="35" y="175" width="150" height="90" rx="10" fill="#f3f7f6"/><text x="110" y="207" font-weight="700">分電盤内蔵型</text><text x="110" y="233">分電盤に内蔵</text><rect x="200" y="175" width="150" height="90" rx="10" fill="#f3f7f6"/><text x="275" y="207" font-weight="700">分電盤後付け型</text><text x="275" y="233">既存盤に追加</text><rect x="365" y="175" width="150" height="90" rx="10" fill="#f3f7f6"/><text x="440" y="207" font-weight="700">コンセント型</text><text x="440" y="233">特定回路を遮断</text><rect x="530" y="175" width="150" height="90" rx="10" fill="#f3f7f6"/><text x="605" y="207" font-weight="700">簡易型</text><text x="605" y="233">おもり等で作動</text></g><text x="360" y="305" font-size="14" fill="#667085">停電に備えて懐中電灯などの照明も準備します</text></g>
-        </svg></div>`,
-      alarm:`<div class="viz"><div class="viz-title">住宅用火災警報器 ― 「何を感知するか」と「どう鳴るか」</div>
-        <svg class="info-svg" viewBox="0 0 720 330" role="img" aria-label="煙式と熱式、単独型と連動型の違いを示す図">
-          <g font-family="sans-serif" text-anchor="middle"><text x="190" y="38" font-size="17" font-weight="700">感知方式</text><rect x="45" y="55" width="290" height="92" rx="12" fill="#edf8f5" stroke="#0f766e"/><circle cx="105" cy="101" r="28" fill="#fff" stroke="#0f766e"/><path d="M90 108 C85 91 98 91 93 77 M105 110 C100 92 112 92 107 77 M120 108 C115 91 128 91 123 77" fill="none" stroke="#7b8f8a" stroke-width="3"/><text x="220" y="92" font-size="18" font-weight="700">煙式</text><text x="220" y="119" font-size="14">煙を感知</text>
-          <rect x="385" y="55" width="290" height="92" rx="12" fill="#fff7e8" stroke="#e47721"/><circle cx="445" cy="101" r="28" fill="#fff" stroke="#e47721"/><text x="445" y="111" font-size="30">♨</text><text x="560" y="92" font-size="18" font-weight="700">熱式</text><text x="560" y="119" font-size="14">温度上昇を感知</text>
-          <text x="190" y="190" font-size="17" font-weight="700">警報の伝わり方</text><rect x="45" y="207" width="290" height="75" rx="12" fill="#f3f7f6"/><text x="190" y="238" font-size="18" font-weight="700">単独型</text><text x="190" y="264" font-size="14">感知した機器だけ鳴る</text><rect x="385" y="207" width="290" height="75" rx="12" fill="#eaf4f1"/><text x="530" y="238" font-size="18" font-weight="700">連動型</text><text x="530" y="264" font-size="14">他の警報器も連動して鳴る</text><text x="360" y="315" font-size="14" fill="#667085">定期的に作動確認し、設置後10年を目安に交換</text></g>
-        </svg></div>`,
-      blockwall:`<div class="viz"><div class="viz-title">危険なブロック塀 ― 「高い・傾く・割れる」に注意</div>
-        <svg class="info-svg" viewBox="0 0 720 355" role="img" aria-label="ブロック塀の高さ、ひび割れ、傾き、控え壁、基礎を確認する図">
-          <g font-family="sans-serif"><rect x="120" y="65" width="300" height="210" fill="#dfe5e4" stroke="#61716e" stroke-width="4"/><g stroke="#8f9c9a" stroke-width="2"><line x1="120" y1="117" x2="420" y2="117"/><line x1="120" y1="169" x2="420" y2="169"/><line x1="120" y1="221" x2="420" y2="221"/><line x1="195" y1="65" x2="195" y2="275"/><line x1="270" y1="65" x2="270" y2="275"/><line x1="345" y1="65" x2="345" y2="275"/></g><path d="M285 80 L265 115 L292 145 L270 185" fill="none" stroke="#b42318" stroke-width="7"/><rect x="95" y="275" width="350" height="28" fill="#8a7463"/><path d="M420 150 L490 275" fill="none" stroke="#0f766e" stroke-width="12"/><text x="508" y="210" font-size="14" fill="#0f766e">控え壁</text>
-          <g font-size="15"><circle cx="535" cy="78" r="12" fill="#e47721"/><text x="560" y="84">高すぎないか</text><circle cx="535" cy="126" r="12" fill="#e47721"/><text x="560" y="132">ひび割れはないか</text><circle cx="535" cy="174" r="12" fill="#e47721"/><text x="560" y="180">傾き・ぐらつきはないか</text><circle cx="535" cy="222" r="12" fill="#e47721"/><text x="560" y="228">控え壁・基礎はあるか</text></g><text x="360" y="338" text-anchor="middle" font-size="15" fill="#b42318" font-weight="700">地震後、異常がある塀には近づかない</text></g>
-        </svg></div>`,
-      furniture:`<div class="viz"><div class="viz-title">家具対策 ― 「固定」と「置き方」の両方が大切</div>
-        <svg class="info-svg" viewBox="0 0 720 360" role="img" aria-label="寝床や出口を家具の転倒範囲から外し家具を壁に固定する室内配置図">
-          <g font-family="sans-serif"><rect x="55" y="35" width="610" height="270" rx="10" fill="#f7fbfa" stroke="#8ab5ae" stroke-width="4"/><rect x="85" y="190" width="230" height="85" rx="10" fill="#d8e7f3"/><text x="200" y="238" text-anchor="middle" font-size="18" font-weight="700">寝床</text><rect x="475" y="55" width="130" height="95" rx="6" fill="#cbbca8" stroke="#735f48" stroke-width="3"/><text x="540" y="105" text-anchor="middle" font-size="17">背の高い家具</text><path d="M470 58 L450 42 M610 58 L630 42" stroke="#0f766e" stroke-width="6"/><text x="540" y="30" text-anchor="middle" font-size="14" fill="#0f766e">壁へ固定</text><path d="M475 152 L335 270 L605 270 Z" fill="#f04438" opacity=".13" stroke="#d92d20" stroke-width="2" stroke-dasharray="8 6"/><text x="515" y="245" text-anchor="middle" font-size="15" fill="#b42318">転倒する範囲</text><rect x="585" y="205" width="58" height="80" fill="#fff" stroke="#5a6c68" stroke-width="3"/><path d="M585 205 L628 225 L628 285" fill="none" stroke="#5a6c68" stroke-width="3"/><text x="614" y="326" text-anchor="middle" font-size="14">出口</text><text x="200" y="326" text-anchor="middle" font-size="14" fill="#0f766e">寝床・出口を転倒範囲から外す</text></g>
-        </svg></div>`,
-      stock:`<div class="viz"><div class="viz-title">ローリングストック ― 使いながら備える</div>
-        <svg class="info-svg" viewBox="0 0 720 330" role="img" aria-label="多めに買う、普段使う、使った分を補充するローリングストックの循環を示す図">
-          <g font-family="sans-serif" text-anchor="middle"><circle cx="360" cy="165" r="116" fill="none" stroke="#c8ded9" stroke-width="22"/><path d="M360 48 A117 117 0 0 1 465 113" fill="none" stroke="#0f766e" stroke-width="22" stroke-linecap="round"/><polygon points="478,122 450,114 468,93" fill="#0f766e"/><path d="M472 205 A117 117 0 0 1 300 271" fill="none" stroke="#e47721" stroke-width="22" stroke-linecap="round"/><polygon points="288,265 316,269 300,291" fill="#e47721"/><path d="M252 127 A117 117 0 0 1 315 61" fill="none" stroke="#5f8f87" stroke-width="22" stroke-linecap="round"/><polygon points="328,56 306,74 301,47" fill="#5f8f87"/>
-          <rect x="285" y="120" width="150" height="90" rx="16" fill="#fff" stroke="#b8d5cf"/><text x="360" y="151" font-size="17" font-weight="700">日常の食品を</text><text x="360" y="179" font-size="22" font-weight="700" fill="#0f766e">少し多めに</text><text x="360" y="199" font-size="14">持っておく</text>
-          <text x="540" y="98" font-size="16" font-weight="700">① 多めに買う</text><text x="525" y="267" font-size="16" font-weight="700">② 普段使う</text><text x="172" y="130" font-size="16" font-weight="700">③ 買い足す</text><text x="360" y="315" font-size="14" fill="#667085">最低3日分、できれば1週間分程度を意識</text></g>
-        </svg></div>`,
-      '171':`<div class="viz"><div class="viz-title">災害用伝言ダイヤル171 ― 家族の安否を音声で残す</div>
-        <svg class="info-svg" viewBox="0 0 720 355" role="img" aria-label="171で伝言を録音または再生する操作手順を示す図">
-          <g font-family="sans-serif" text-anchor="middle"><circle cx="105" cy="125" r="65" fill="#0f766e"/><text x="105" y="143" font-size="50" font-weight="700" fill="white">171</text><path d="M175 125 H235" stroke="#667085" stroke-width="5"/><polygon points="245,125 227,115 227,135" fill="#667085"/>
-          <rect x="255" y="65" width="165" height="120" rx="14" fill="#edf8f5" stroke="#0f766e"/><text x="337" y="99" font-size="17">録音なら</text><text x="337" y="135" font-size="40" font-weight="700" fill="#0f766e">1</text><text x="337" y="166" font-size="17">再生なら <tspan font-weight="700">2</tspan></text><path d="M430 125 H490" stroke="#667085" stroke-width="5"/><polygon points="500,125 482,115 482,135" fill="#667085"/>
-          <rect x="510" y="65" width="175" height="120" rx="14" fill="#f3f7f6" stroke="#75948f"/><text x="598" y="105" font-size="17" font-weight="700">電話番号を入力</text><text x="598" y="134" font-size="15">市外局番から</text><text x="598" y="163" font-size="14" fill="#667085">家族で共通番号を決める</text>
-          <rect x="120" y="230" width="480" height="72" rx="14" fill="#fff1e8" stroke="#e47721"/><text x="360" y="260" font-size="17" font-weight="700">録音：171 → 1 → 電話番号 → ガイダンス</text><text x="360" y="288" font-size="17" font-weight="700">再生：171 → 2 → 電話番号 → ガイダンス</text><text x="360" y="337" font-size="14" fill="#667085">災害時に慌てないよう、体験利用日に家族で練習</text></g>
-        </svg></div>`
-    };return V[type]||'';
+      history:fig('大地震から分かった4つの教訓',
+        `<div class="figure-history">${[
+          ['1995年','阪神・淡路大震災','建物倒壊や大規模火災','家具固定・耐震化・初期消火を備える'],
+          ['2011年','東日本大震災','津波・広い範囲の被害・停電','避難方法と生活備蓄を考える'],
+          ['2016年','熊本地震','強い揺れが繰り返し発生','一度揺れが収まっても警戒を続ける'],
+          ['2024年','能登半島地震','倒壊・火災・道路の寸断','移動できない場合も想定して備える']
+        ].map(row=>`<div class="history-entry"><span class="history-year">${row[0]}</span><div><strong>${row[1]}</strong><p>主な被害：${row[2]}</p><p class="history-lesson">備え：${row[3]}</p></div></div>`).join('')}</div>`,
+        '被害の特徴は地震や地域によって異なります。家の安全・火災・避難・備蓄を組み合わせましょう。'),
+      magnitude:fig('1つの地震でも、場所ごとに揺れは違う',
+        `<div class="figure-hero figure-hero-green"><span class="figure-hero-icon" aria-hidden="true">🌍</span><div><small>地震そのものの規模</small><strong>マグニチュード（M）</strong><p>一つの地震に対する規模の指標</p></div></div><div class="figure-down-arrow" aria-hidden="true">↓ 揺れが伝わる</div>`+
+        comparePanels([['location-a','地点Aの震度','震源からの距離や地盤により揺れの強さが決まる'],['location-b','地点Bの震度','同じ地震でも地点Aとは震度が異なる場合がある']]),
+        '震度は0・1・2・3・4・5弱・5強・6弱・6強・7の10階級です。'),
+      probability:fig('「30年以内の確率」の読み方',
+        `<div class="figure-period"><span>いま</span><div class="period-line" aria-hidden="true"><i></i></div><span>30年後</span></div><div class="figure-hero figure-hero-warm"><span class="figure-hero-icon" aria-hidden="true">🗓️</span><div><strong>長い期間に起こる可能性</strong><p>「○％」は、その30年間に発生する可能性の評価です。</p></div></div>`+
+        comparePanels([['location-a','分かること','長期間でみた発生の可能性'],['location-b','分からないこと','何月何日に地震が起きるか']]),
+        '確率が低いから今は安全、という意味ではありません。日頃から備えることが重要です。'),
+      longperiod:fig('長周期地震動は、高層階で大きく揺れることがある',
+        `<div class="figure-building"><div class="building-icon" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><div class="building-text"><strong>高層ビル</strong><p>建物全体がゆっくり大きく揺れる場合があります。</p><span class="sway-sign" aria-hidden="true">←　→</span></div></div>`+
+        stepList([['長くゆっくり揺れる','揺れが長時間続く場合があります。','↔'],['家具やキャスターが動く','転倒・移動・落下に注意します。','🪑'],['姿勢を低くして身を守る','むやみに移動せず、揺れが収まるのを待ちます。','🛡️']]),
+        '気象庁は長周期地震動階級を1～4で発表します。'),
+      hazard:fig('下京区の地震想定は、家の周りに引き寄せて考える',
+        stepList([['想定される揺れを知る','京都市の地震ハザードマップを確認します。','🗺️'],['自宅の危険を見直す','建物の耐震・家具の固定・火災対策を考えます。','🏠'],['集合場所まで歩いて確かめる','道沿いのブロック塀や狭い道も確認します。','🚶'],['家族・近所で共有する','避難先と連絡方法を相談しておきます。','👨‍👩‍👧']]),
+        'ハザードマップは被害想定であり、実際の地震を予報するものではありません。'),
+      shelter:fig('「逃げる場所」と「生活する場所」の違い',
+        comparePanels([['location-a','指定緊急避難場所','災害の危険から一時的に身を守る場所'],['location-b','指定避難所','自宅で生活できない場合に避難生活を送る施設']])+ 
+        `<div class="figure-hero figure-hero-green"><span class="figure-hero-icon" aria-hidden="true">🏫</span><div><strong>植柳コミュニティセンター</strong><p>京都市の指定避難所として掲載されています。</p></div></div>`,
+        '指定されていても必ず開設されるとは限りません。災害時は自治体の開設情報を確認してください。'),
+      rescue:fig('救助をするときは、まず自分の安全',
+        stepList([['二次災害を防ぐ','倒壊の危険や火災など、周囲の安全を確かめます。','🛡️'],['応援を呼び119番','一人で無理をせず、周囲に協力を求めます。','📞'],['反応・呼吸を確認','安全な場所で確認し、普段どおりの呼吸がないときは胸骨圧迫を行います。','❤️'],['AEDがあれば使用','音声案内に従い、救急隊へ引き継ぎます。','⚡']]),
+        '倒壊建物など危険な場所への立入りや無理な救出は避け、消防など専門機関に任せてください。'),
+      aed:fig('AEDの使い方：機械の声に従う',
+        stepList([['119番通報・AEDを依頼','周囲の人に役割を頼み、救命処置を始めます。','📞'],['AEDの電源を入れる','ふたを開けるなど、機種の音声案内に従います。','🔌'],['胸にパッドを貼る','図に示された位置へ貼ります。','🩹'],['解析中は触れない','機械が心電図を調べている間は離れます。','⏸️'],['指示があればショック','誰も体に触れていないことを確認します。','⚡'],['胸骨圧迫を再開','AEDの指示に従い救急隊が来るまで続けます。','❤️']]),
+        'AEDは必要な場合にのみ電気ショックを指示します。倒れて反応・普段どおりの呼吸がない場合は、ためらわず救命処置を行います。'),
+      extinguisher:fig('消火器の基本は「ピン → ホース → レバー」',
+        stepList([['安全を確認する','退路を確保し、周囲に火事を知らせます。','🚪'],['安全栓を引き抜く','上部のピンを抜きます。','①'],['ホースを火元へ向ける','炎ではなく燃えている物の根元を狙います。','②'],['レバーを強く握る','姿勢を低くして放射します。','③']]),
+        '火が大きい・煙が多い・逃げ道が危険なときは消火をやめ、直ちに避難して119番通報します。'),
+      breaker:fig('感震ブレーカーが動く仕組み',
+        stepList([['強い地震の揺れ','設定以上の揺れを感知します。','〰️'],['電気を自動で遮断','製品の方式に応じて通電を止めます。','🔌'],['電気火災の危険を減らす','復電時などの出火リスクを低減します。','🛡️']])+
+        `<h5 class="figure-subheading">主なタイプ</h5>`+
+        factCards([['分電盤型','家の分電盤で電気を遮断する','🏠'],['コンセント型','特定のコンセントの通電を遮断する','🔌'],['簡易型','おもり・ばね等でブレーカーを操作する','⚙️']]),
+        '停電すると照明や医療機器等にも影響します。設置前に製品の特性を確認し、非常用照明も準備します。'),
+      alarm:fig('住宅用火災警報器には2つの見分け方',
+        `<h5 class="figure-subheading">① 何を感知するか</h5>`+
+        factCards([['煙式','煙を感知。住宅で広く使われる方式','💨'],['熱式','周囲の温度上昇を感知','🌡️']])+
+        `<h5 class="figure-subheading">② どこで警報が鳴るか</h5>`+
+        factCards([['単独型','火災を感知した機器が鳴る','🔔'],['連動型','連動設定した他の警報器も鳴る','📣']]),
+        '定期的に作動を確認し、設置後おおむね10年を目安に機器の交換を検討します。'),
+      blockwall:fig('危ないブロック塀を見つけるポイント',
+        `<div class="figure-wall-area"><div class="figure-wall" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><span class="wall-crack">⚡</span></div><div><strong>気づきたいサイン</strong><p>ひび割れ・傾き・ぐらつき</p><p>高すぎる塀、控え壁・基礎の不備</p></div></div>`+
+        stepList([['普段から状態を確認する','不安があれば専門家へ相談します。','👀'],['地震の後は近づかない','倒壊する危険がある塀から離れます。','⚠️'],['危険箇所は地域と共有','避難経路を変えるなど安全を確保します。','📣']]),
+        '外見だけで構造の安全性は判断できません。危険が疑われる場合は近づかないでください。'),
+      furniture:fig('家具は「固定」と「置く場所」の両方を考える',
+        comparePanels([['danger','危険な置き方','倒れた家具が寝床や出入口をふさぐ'],['safe','安全に近づける工夫','壁の下地に固定し、寝床・出口を転倒方向から外す']])+
+        stepList([['家具を壁に固定する','適切な金具などで壁の下地に固定します。','🔧'],['寝室・通路を空ける','大きな家具の配置と倒れる向きを見直します。','🚪'],['中身も落とさない','扉の開放やガラスの飛散も防ぎます。','📚']]),
+        '固定方法は家具・壁の種類に合ったものを選んでください。'),
+      stock:fig('ローリングストックは「買う→使う→買い足す」',
+        stepList([['少し多めに買う','普段食べる食品や水を必要量より少し多く用意します。','🛒'],['古いものから使う','日常生活で使い、賞味期限切れを防ぎます。','🍚'],['使った分を買い足す','常に一定量が家庭に残るように補充します。','🛍️']])+
+        `<div class="figure-repeat">↻　この流れをくり返す</div>`,
+        '最低3日分、できれば1週間分を目安に、水・食料のほか携帯トイレや常備薬も備えましょう。'),
+      '171':fig('171（災害用伝言ダイヤル）の操作',
+        `<div class="figure-dial"><span aria-hidden="true">☎</span><strong>まず「171」に電話する</strong></div>`+
+        comparePanels([['location-a','録音する場合','ガイダンスに従い「1」を押す'],['location-b','再生する場合','ガイダンスに従い「2」を押す']])+
+        `<div class="figure-down-arrow" aria-hidden="true">↓</div><div class="figure-hero figure-hero-green"><span class="figure-hero-icon" aria-hidden="true">📱</span><div><strong>連絡先の電話番号を入力</strong><p>市外局番から。あとは音声ガイダンスに従う。</p></div></div>`,
+        '家族で共通して使う電話番号を事前に決め、体験利用日に練習しておきましょう。')
+    };
+    return V[type]||'';
   }
   function renderTrivia(){
     triviaList.innerHTML='';const categories=[...new Set(APP_DATA.trivia.map(x=>x.category))];
@@ -186,7 +146,7 @@
       const body=document.createElement('div');body.className='group-body';body.hidden=true;
       items.forEach(item=>{
         const wrap=document.createElement('article');wrap.className='nested-item trivia-item';const btn=document.createElement('button');btn.type='button';btn.className='item-toggle trivia-item-toggle';btn.setAttribute('aria-expanded','false');btn.innerHTML=`<span><strong>${escapeHtml(item.title)}</strong><small>詳細を見る</small></span>${makeChevron()}`;
-        const detail=document.createElement('div');detail.className='item-detail trivia-detail';detail.hidden=true;detail.innerHTML=`<p class="detail-summary">${escapeHtml(item.summary)}</p>${visual(item.visual)}<h4>ポイント</h4><ul>${item.points.map(p=>`<li>${escapeHtml(p)}</li>`).join('')}</ul>${sourceLinks(item.sources)}`;
+        const detail=document.createElement('div');detail.className='item-detail trivia-detail';detail.hidden=true;detail.innerHTML=`<p class="detail-summary">${escapeHtml(item.summary)}</p>${visual(item.visual)}<h4>ポイント</h4><ul>${item.points.map(p=>`<li>${escapeHtml(p)}</li>`).join('')}</ul>`;
         btn.addEventListener('click',()=>toggleButton(btn,detail,wrap));wrap.append(btn,detail);body.appendChild(wrap);
       });gbtn.addEventListener('click',()=>toggleButton(gbtn,body,group));group.append(gbtn,body);triviaList.appendChild(group);
     });

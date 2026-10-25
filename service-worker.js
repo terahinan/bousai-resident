@@ -1,4 +1,4 @@
-const CACHE_NAME='jishin-ni-sonaeru-v34-20261024';
+const CACHE_NAME='jishin-ni-sonaeru-v35-20261024';
 const ASSETS=[
   './',
   './index.html',
